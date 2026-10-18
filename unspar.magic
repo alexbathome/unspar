@@ -1,0 +1,6 @@
+# Magic(5) rules for the unsparsed format written by unspar.
+# Header: magic[8], version uint16, flags uint16, apparent size int64 (big-endian).
+0	string		\x89UNSPRS\n	Unsparse sparse file data
+!:mime	application/x-unsparsed
+>8	beshort		x		\b, version %d
+>12	bequad		x		\b, apparent size %lld bytes
