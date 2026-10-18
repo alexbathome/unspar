@@ -1,8 +1,6 @@
 # Binaries
 /unspar
-/unspar.exe
 /dist/
-*.exe
 *.dll
 *.so
 *.dylib
