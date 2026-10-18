@@ -1,0 +1,80 @@
+name: Release
+
+on:
+  push:
+    branches: [main]
+
+concurrency:
+  group: release
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+
+jobs:
+  ci:
+    uses: ./.github/workflows/ci.yml
+
+  release:
+    needs: ci
+    runs-on: ubuntu-latest
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v4
+        with:
+          path: unspar
+          fetch-depth: 0
+      - uses: actions/checkout@v4
+        with:
+          repository: alexbathome/unsparse
+          path: unsparse
+      - uses: actions/setup-go@v5
+        with:
+          go-version-file: unspar/go.mod
+          cache-dependency-path: unspar/go.sum
+
+      - name: Compute next version (patch bump)
+        id: version
+        working-directory: unspar
+        run: |
+          latest=$(git tag --list 'v*' --sort=-v:refname | head -n1)
+          if [ -z "$latest" ]; then
+            next=v0.1.0
+          else
+            IFS=. read -r major minor patch <<<"${latest#v}"
+            next="v${major}.${minor}.$((patch + 1))"
+          fi
+          echo "version=$next" >> "$GITHUB_OUTPUT"
+
+      - name: Build binaries
+        working-directory: unspar
+        env:
+          CGO_ENABLED: "0"
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          mkdir dist
+          for target in linux/amd64 linux/arm64 darwin/amd64 darwin/arm64 windows/amd64 windows/arm64; do
+            os=${target%/*}; arch=${target#*/}
+            name="unspar_${VERSION}_${os}_${arch}"
+            ext=""; [ "$os" = windows ] && ext=".exe"
+            GOOS=$os GOARCH=$arch go build -trimpath -ldflags "-s -w" -o "dist/unspar${ext}" .
+            if [ "$os" = windows ]; then
+              (cd dist && zip "${name}.zip" "unspar${ext}")
+            else
+              tar -C dist -czf "dist/${name}.tar.gz" "unspar${ext}"
+            fi
+            rm "dist/unspar${ext}"
+          done
+          (cd dist && sha256sum * > checksums.txt)
+
+      - name: Tag and publish release
+        working-directory: unspar
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          VERSION: ${{ steps.version.outputs.version }}
+        run: |
+          gh release create "$VERSION" dist/* \
+            --target "$GITHUB_SHA" \
+            --title "$VERSION" \
+            --generate-notes

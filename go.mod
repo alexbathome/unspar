@@ -1,9 +1,9 @@
 module github.com/alexbathome/unspar
 
-go 1.26.3
+go 1.27.2
 
 require (
-	github.com/alexbathome/unsparse v0.0.0
+	github.com/alexbathome/unsparse v0.1.2
 	github.com/charmbracelet/fang v1.0.0
 	github.com/muesli/mango-cobra v1.2.0
 	github.com/muesli/roff v0.1.0
@@ -35,5 +35,3 @@ require (
 	golang.org/x/sys v0.49.0 // indirect
 	golang.org/x/text v0.24.0 // indirect
 )
-
-replace github.com/alexbathome/unsparse => ../unsparse
