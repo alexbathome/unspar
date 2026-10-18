@@ -7,7 +7,7 @@ This is especially useful if you need to move sparse files through tools, or sys
 ## Installation
 
 ```
-go install https://github.com/alexbathome/unspar@latest
+go install github.com/alexbathome/unspar@latest
 ```
 
 ## Usage 
